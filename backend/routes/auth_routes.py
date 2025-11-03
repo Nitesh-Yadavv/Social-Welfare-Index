@@ -1,21 +1,24 @@
 from flask import Blueprint, request, jsonify
+from extensions import db
+from models import Student
+from werkzeug.security import check_password_hash
+from flask_cors import cross_origin
 
 auth_bp = Blueprint('auth', __name__)
 
-# Dummy credentials (replace with DB later)
-USERS = [
-    {"email": "student@example.com", "password": "12345"},
-    {"email": "nitesh@example.com", "password": "abcde"},
-]
-
-@auth_bp.route("/login", methods=["POST"])
+@auth_bp.route('/login', methods=['POST'])
+@cross_origin()
 def login():
     data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
+    email = data.get('email')
+    password = data.get('password')
 
-    for user in USERS:
-        if email == user["email"] and password == user["password"]:
-            return jsonify({"message": "Login successful", "status": "success"}), 200
-
-    return jsonify({"message": "Invalid credentials", "status": "error"}), 401
+    student = Student.query.filter_by(email=email).first()
+    if student and check_password_hash(student.password, password):
+        return jsonify({
+            "success": True,
+            # ✅ FIX: Include ID and necessary user data
+            "user": {"id": student.id, "name": student.name, "email": student.email}
+        })
+    else:
+        return jsonify({"success": False, "message": "Invalid credentials"}), 401

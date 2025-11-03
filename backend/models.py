@@ -5,7 +5,8 @@ class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(100))
+    # FIX: Increased size to accommodate password hash
+    password = db.Column(db.String(255))
     activities = db.relationship("Activity", backref="student", lazy=True)
 
 class Activity(db.Model):

@@ -2,7 +2,7 @@
 from flask import Flask
 from flask_cors import CORS
 import os
-from extensions import db  # ✅ import from extensions
+from extensions import db  # import from extensions
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
@@ -29,9 +29,11 @@ def create_app():
 
     return app
 
+# ✅ FIX: Create the app instance here so it can be imported by seed.py
+app = create_app()
 
 if __name__ == "__main__":
-    app = create_app()
+    # The run block only handles startup logic
     with app.app_context():
         db.create_all()
     app.run(debug=True)

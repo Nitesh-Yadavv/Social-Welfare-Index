@@ -1,15 +1,18 @@
+# seed.py
 from app import app, db
 from models import Student, Activity
+from werkzeug.security import generate_password_hash # ✅ NEW: Import for hashing
 
-with app.app_context():   # ✅ use the app directly, not db.app
+with app.app_context():
     db.create_all()
 
-    # create a student
-    s1 = Student(name="John Doe", email="student@example.com", password="12345")
+    # Create a student with a HASHED password
+    hashed_password = generate_password_hash("12345")
+    s1 = Student(name="John Doe", email="student@example.com", password=hashed_password)
     db.session.add(s1)
     db.session.commit()
 
-    # add sample activities
+    # Add sample activities
     activities = [
         Activity(name="Coding Club", status="Active", points=50, student_id=s1.id),
         Activity(name="Football Team", status="Completed", points=30, student_id=s1.id),
