@@ -84,3 +84,8 @@ pip install -r requirements.txt
 python seed.py   # (optional) add sample student
 python app.py
 ```
+### Frontend Setup (React)
+```bash
+cd frontend
+npm install
+npm start ```
