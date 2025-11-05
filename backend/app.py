@@ -1,4 +1,5 @@
 # backend/app.py
+import jsonify
 import cloudinary
 from dotenv import load_dotenv
 load_dotenv()
