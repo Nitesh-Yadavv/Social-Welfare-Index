@@ -118,11 +118,73 @@ def get_dashboard_stats():
     if not student:
         return jsonify({"success": False, "message": "Student not found."}), 404
 
-    # 1. Calculate Points
-    total_points = db.session.query(func.sum(Activity.points)).filter_by(
+    # --- 1. Calculate Points (Ps, Pt) ---
+    # Ps (Total Social Points)
+    Ps = db.session.query(func.sum(Activity.points)).filter_by(
+        student_id=student_id, 
+        status='Completed', 
+        category='social'
+    ).scalar() or 0
+    
+    # Pt (Total Points)
+    Pt = db.session.query(func.sum(Activity.points)).filter_by(
         student_id=student_id, 
         status='Completed'
     ).scalar() or 0
+
+    # --- 2. Calculate Activity Counts (Ns, Nt, Vs) ---
+    # Ns (Number of social activities, all statuses)
+    Ns = Activity.query.filter_by(
+        student_id=student_id, 
+        category='social'
+    ).count()
+
+    # Nt (Total activities, all statuses)
+    Nt = Activity.query.filter_by(student_id=student_id).count()
+
+    # Vs (Number of VERIFIED social activities)
+    Vs = Activity.query.filter_by(
+        student_id=student_id, 
+        category='social', 
+        status='Completed'
+    ).count()
+
+    # --- 3. Calculate Diversity (D) ---
+    # Get all unique, *completed* categories for this student
+    unique_categories_query = db.session.query(
+        Activity.category
+    ).filter_by(
+        student_id=student_id,
+        status='Completed'
+    ).distinct().all()
+    
+    unique_categories_count = len(unique_categories_query)
+    
+    # Total possible categories in your system
+    total_possible_categories = 5.0  # (Social, Technical, Sports, Cultural, NCC)
+    
+    # D (Diversity Factor)
+    D = (unique_categories_count / total_possible_categories) if total_possible_categories > 0 else 0
+
+    # --- 4. Return all variables ---
+    return jsonify({
+        "success": True,
+        "stats": {
+            "Ps": Ps, # Social Points
+            "Pt": Pt, # Total Points
+            "Ns": Ns, # Total Social Activities
+            "Nt": Nt, # Total Activities
+            "Vs": Vs, # Verified Social Activities
+            "D": D,   # Diversity Factor
+            
+            # (Keep old ones for ProfileDropdown)
+            "total_points": Pt,
+            "social_points": Ps, # for the nav bar
+            "total_activities": Nt,
+            "social_activities": Ns,
+            "ranking": 0 # We'll deal with ranking later
+        }
+    })
     
     social_points = db.session.query(func.sum(Activity.points)).filter_by(
         student_id=student_id, 

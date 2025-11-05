@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'; // ✅ NEW: Import Link
 
 const LoginForm = ({ onLoginSuccess }) => {
   // ... (all states and handleSubmit function remain the same)
-  const [email, setEmail] = useState('student@rtu.ac.in');
-  const [password, setPassword] = useState('12345');
+  const [email, setEmail] = useState('test@rtu.ac.in');
+  const [password, setPassword] = useState('apple@#1234');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -45,7 +45,7 @@ const LoginForm = ({ onLoginSuccess }) => {
         <h2 className="text-3xl font-extrabold mb-8 text-center text-purple-700">Student Login 🚀</h2>
         
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Email (Hint: student@rtu.ac.in.com)</label>
+          <label className="block text-sm font-medium text-gray-700">Email (Hint: student@rtu.ac.in)</label>
           <input
             type="email"
             className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
