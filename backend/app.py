@@ -10,6 +10,7 @@ from extensions import db
 
 UPLOAD_FOLDER = 'uploads'
 
+
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     CORS(app)
@@ -41,6 +42,11 @@ def create_app():
     
     # ✅ --- NEW: Register Admin Blueprint ---
     app.register_blueprint(admin_bp, url_prefix="/api")
+    @app.route('/')
+    def health_check():
+        """A simple health check route for Render."""
+        return jsonify({"status": "ok", "message": "Backend is running!"}), 200
+    # --- END OF NEW BLOCK ---
 
    
 
