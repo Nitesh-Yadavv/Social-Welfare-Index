@@ -3,9 +3,18 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginForm from "./components/LoginForm";
 import Dashboard from "./components/Dashboard";
+import SignupForm from "./components/SignupForm"; // ✅ NEW: Import SignupForm
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  // ✅ NEW: Simple check if user is logged in (e.g., by checking localStorage)
+  // This helps persist login state on refresh
+  React.useEffect(() => {
+    if (localStorage.getItem('user')) {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   return (
     <Router>
@@ -17,6 +26,17 @@ function App() {
               <Navigate to="/dashboard" />
             ) : (
               <LoginForm onLoginSuccess={() => setIsLoggedIn(true)} />
+            )
+          }
+        />
+        {/* ✅ NEW: Add the signup route */}
+        <Route
+          path="/signup"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <SignupForm />
             )
           }
         />
