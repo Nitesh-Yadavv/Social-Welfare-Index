@@ -67,30 +67,20 @@ const Dashboard = ({ onLogout }) => {
 
   // ✅ --- Updated Loading State ---
   // Wait for all data to be loaded
-  if (!student || !activities || !stats) {
+if (!student || !activities || !stats) {
     return <div className="min-h-screen flex items-center justify-center">Loading Dashboard...</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      
-      {/* ❌ OLD SIDEBAR IS REMOVED */}
-
-      {/* ✅ NEW: Render the Top Nav Bar */}
+      {/* ... (TopNavBar remains the same) ... */}
       <TopNavBar student={student} stats={stats} onLogout={handleLogout} />
 
-      {/* ✅ NEW: Main Content Area (Layout updated) */}
-      {/* We add 'pt-20' to push content below the fixed nav bar */}
-      <main className="pt-20 p-8">
-        
-        {/* ❌ OLD StudentOverviewCard IS REMOVED */}
-
-        {/* --- Main Body Layout (Unchanged) --- */}
+      <main className="pt-40 p-10">
         <div className="flex space-x-8">
-        
           {/* Left Side: Activity List */}
           <div className="flex-grow w-2/3">
-            {/* --- Sub-header --- */}
+            {/* ... (Sub-header and Add Activity Button) ... */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-700">Activity Summary</h2>
               <button 
@@ -101,28 +91,31 @@ const Dashboard = ({ onLogout }) => {
               </button>
             </div>
 
-            {/* --- Activity Table (Unchanged) --- */}
+            {/* --- Activity Table (Updated) --- */}
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
-                {/* ... (your existing table head) ... */}
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    {/* ✅ --- NEW HEADER --- */}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
                   </tr>
                 </thead>
-                {/* ... (your existing table body) ... */}
                 <tbody className="bg-white divide-y divide-gray-200">
                   {activities.length > 0 ? (
                     activities.map((activity) => (
                       <tr key={activity.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.category}</td>
+                        {/* ✅ --- NEW CELL --- */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.club_name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.date}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {/* ... (status logic) ... */}
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             activity.status === 'Completed' ? 'bg-green-100 text-green-800' : 
                             activity.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
@@ -135,7 +128,8 @@ const Dashboard = ({ onLogout }) => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="text-center p-6 text-gray-500">
+                      {/* ✅ --- ColSpan updated to 6 --- */}
+                      <td colSpan="6" className="text-center p-6 text-gray-500">
                         You haven't added any activities yet.
                       </td>
                     </tr>
@@ -145,20 +139,22 @@ const Dashboard = ({ onLogout }) => {
             </div>
           </div>
           
-          {/* Right Side: Upcoming Events (Unchanged) */}
+          {/* ... (Right Side: Upcoming Events) ... */}
+          {/* --- Right Side: Upcoming Events --- */}
           <div className="w-1/3">
-            {/* ... (your existing upcoming events placeholder) ... */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-700">Upcoming Events</h2>
             </div>
             <div className="bg-white shadow-md rounded-lg p-6">
               <p className="text-gray-500">No upcoming events found.</p>
+              {/* Later, this will be a list of events from the DB */}
             </div>
           </div>
+          
         </div>
       </main>
 
-      {/* --- Render Modal (Unchanged) --- */}
+      {/* ... (Modal rendering) ... */}
       {isModalOpen && (
         <AddActivityModal 
           studentId={student.id}

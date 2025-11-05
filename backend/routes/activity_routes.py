@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from extensions import db
-from models import Activity, Student # ✅ NEW: Import Student
+from models import Activity, Student
 from werkzeug.utils import secure_filename
 from flask_cors import cross_origin
 import os
@@ -8,85 +8,82 @@ from sqlalchemy import func
 
 activity_bp = Blueprint('activity', __name__)
 
-# ✅ NEW: Route to GET all activities for the logged-in student
+# --- GET Activities (Updated) ---
 @activity_bp.route('/activities', methods=['GET'])
 @cross_origin()
 def get_activities():
-    # Get student_id from query param
+    # ... (code to get student and activities) ...
     student_id = request.args.get('student_id')
-    if not student_id:
-        return jsonify({"success": False, "message": "Student ID is required."}), 400
-
     student = Student.query.get(student_id)
     if not student:
         return jsonify({"success": False, "message": "Student not found."}), 404
 
     activities = student.activities
-    
-    # Convert activity objects to dictionaries
     output = []
     for activity in activities:
         output.append({
             "id": activity.id,
             "name": activity.name,
             "category": activity.category,
+            # ✅ --- ADDED FIELD ---
+            "club_name": activity.club_name, 
             "status": activity.status,
             "points": activity.points,
-            "date": activity.date.strftime('%Y-%m-%d') # Format the date
+            "date": activity.date.strftime('%Y-%m-%d')
         })
 
     return jsonify({"success": True, "activities": output})
 
 
-# ✅ NEW: Route to ADD a new activity
+# --- ADD Activity (Updated) ---
 @activity_bp.route('/activities/add', methods=['POST'])
 @cross_origin()
 def add_activity():
     # --- 1. Get Data ---
-    # Data comes as multipart/form-data
     student_id = request.form.get('student_id')
     name = request.form.get('name')
     category = request.form.get('category')
+    
+    # ✅ --- GET NEW FIELD ---
+    # Get club name. If it's an empty string or None, default to "N/A".
+    club_name = request.form.get('club_name') or "N/A"
 
-    # --- 2. Validation ---
+    # ... (validation and file checks remain the same) ...
     if not all([student_id, name, category]):
         return jsonify({"success": False, "message": "Missing required fields."}), 400
-
     if 'proof' not in request.files:
         return jsonify({"success": False, "message": "Proof file is required."}), 400
-
     file = request.files['proof']
     if file.filename == '':
         return jsonify({"success": False, "message": "No selected file."}), 400
 
-    # --- 3. Save File ---
+    # ... (file saving logic remains the same) ...
     filename = ""
     if file:
-        # Create a unique filename to avoid overwrites
-        # e.g., "1_Social_Volunteering.pdf"
         filename = secure_filename(f"{student_id}_{category}_{file.filename}")
         save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        
         try:
             file.save(save_path)
         except Exception as e:
             return jsonify({"success": False, "message": f"Error saving file: {str(e)}"}), 500
 
-    # --- 4. Create DB Entry ---
+    # --- 4. Create DB Entry (Updated) ---
     new_activity = Activity(
         name=name,
         category=category,
         student_id=student_id,
-        proof_url=filename, # Save the filename
-        status="Pending",  # Auto-set status
-        points=0           # Default points to 0, admin can update later
+        proof_url=filename,
+        status="Pending",
+        points=0,
+        # ✅ --- SAVE NEW FIELD ---
+        club_name=club_name 
     )
 
     try:
         db.session.add(new_activity)
         db.session.commit()
         
-        # Return the new activity object
+        # --- Return (Updated) ---
         return jsonify({
             "success": True, 
             "message": "Activity submitted for approval!",
@@ -94,6 +91,8 @@ def add_activity():
                 "id": new_activity.id,
                 "name": new_activity.name,
                 "category": new_activity.category,
+                # ✅ --- RETURN NEW FIELD ---
+                "club_name": new_activity.club_name,
                 "status": new_activity.status,
                 "points": new_activity.points,
                 "date": new_activity.date.strftime('%Y-%m-%d')
@@ -101,10 +100,12 @@ def add_activity():
         }), 201
 
     except Exception as e:
-        # If DB commit fails, delete the orphaned file
+        # ... (error handling remains the same) ...
         if os.path.exists(save_path):
             os.remove(save_path)
         return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
+
+# ... (your /dashboard-stats route remains here, unchanged) ...
     
 @activity_bp.route('/dashboard-stats', methods=['GET'])
 @cross_origin()

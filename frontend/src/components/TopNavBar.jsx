@@ -26,19 +26,23 @@ const TopNavBar = ({ student, stats, onLogout }) => {
   }, []);
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-white h-20 px-8 shadow-md z-30 flex items-center justify-between">
+    <nav 
+      className="fixed top-0 left-0 w-full bg-gradient-to-r from-purple-700 to-indigo-600 h-20 px-8 shadow-lg z-30 flex items-center justify-between"
+    >
       
       {/* --- Left Side: Social Welfare Index --- */}
       <div className="flex items-center space-x-4">
-        <h1 className="text-xl font-bold text-purple-700">Social Welfare Index</h1>
+        <h1 className="text-xl font-bold text-white">Social Welfare Index</h1>
         <div className="w-64">
-          <div className="flex justify-between text-sm font-medium text-gray-600 mb-1">
+          <div className="flex justify-between text-sm font-medium text-purple-200 mb-1">
             <span>Social Points</span>
             <span>{socialIndex} / 100</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+          {/* Darker track for the progress bar */}
+          <div className="w-full bg-purple-900 bg-opacity-50 rounded-full h-2.5">
+            {/* White fill for contrast */}
             <div 
-              className="bg-purple-600 h-2.5 rounded-full" 
+              className="bg-white h-2.5 rounded-full" 
               style={{ width: `${socialIndex}%` }}
             ></div>
           </div>
@@ -51,8 +55,10 @@ const TopNavBar = ({ student, stats, onLogout }) => {
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className="flex items-center space-x-2"
         >
-          <span className="text-sm font-medium text-gray-700 hidden sm:block">Profile</span>
-          <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center text-lg font-bold">
+          {/* Profile text is now white */}
+          <span className="text-sm font-medium text-white hidden sm:block">Profile</span>
+          {/* Inverted circle: White background, purple text */}
+          <div className="w-10 h-10 rounded-full bg-white text-purple-700 flex items-center justify-center text-lg font-bold">
             {profileInitial}
           </div>
         </button>

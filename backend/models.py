@@ -23,3 +23,4 @@ class Activity(db.Model):
     category = db.Column(db.String(50), nullable=False)
     proof_url = db.Column(db.String(255), nullable=True) # URL to the uploaded proof
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    club_name = db.Column(db.String(100), nullable=False, default="N/A")

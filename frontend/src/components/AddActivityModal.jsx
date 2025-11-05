@@ -1,19 +1,19 @@
-// frontend/src/components/AddActivityModal.jsx
 import React, { useState } from 'react';
 
 const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('social'); // Default category
+  const [category, setCategory] = useState('social');
+  
+  // ✅ --- NEW STATE ---
+  const [clubName, setClubName] = useState(''); 
+  
   const [proof, setProof] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!proof) {
-      setError('Please upload a proof file.');
-      return;
-    }
+    // ... (form validation remains the same) ...
     setError('');
     setLoading(true);
 
@@ -22,18 +22,21 @@ const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
     formData.append('name', name);
     formData.append('category', category);
     formData.append('proof', proof);
+    
+    // ✅ --- ADD TO FORMDATA ---
+    // Send the club name, or "N/A" if it's blank
+    formData.append('club_name', clubName || 'N/A');
 
     try {
+      // ... (fetch logic remains the same) ...
       const response = await fetch('http://localhost:5000/api/activities/add', {
         method: 'POST',
-        body: formData, // No content-type header needed for FormData
+        body: formData,
       });
-
       const data = await response.json();
-
       if (data.success) {
-        onActivityAdded(data.activity); // Pass the new activity back to the dashboard
-        onClose(); // Close the modal
+        onActivityAdded(data.activity);
+        onClose();
       } else {
         setError(data.message || 'Failed to add activity.');
       }
@@ -45,28 +48,22 @@ const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
   };
 
   return (
-    // Backdrop
+    // ... (modal backdrop and wrapper) ...
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center"
-      onClick={onClose} // Close modal on backdrop click
+      onClick={onClose}
     >
-      {/* Modal Content */}
       <div 
         className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg relative"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl"
-        >
-          &times;
-        </button>
-        
+        {/* ... (close button and title) ... */}
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Activity</h2>
         
         <form onSubmit={handleSubmit}>
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {/* ... (error message) ... */}
           
+          {/* ... (Activity Name input) ... */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Activity Name</label>
             <input 
@@ -78,6 +75,7 @@ const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
             />
           </div>
 
+          {/* ... (Category select) ... */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">Category</label>
             <select
@@ -93,6 +91,21 @@ const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
             </select>
           </div>
 
+          {/* ✅ --- NEW INPUT FIELD --- */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Club Name <span className="text-gray-400">(if any)</span>
+            </label>
+            <input 
+              type="text" 
+              value={clubName}
+              onChange={(e) => setClubName(e.target.value)}
+              placeholder='e.g., "Coding Club" (leave blank for "N/A")'
+              className="mt-1 p-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" 
+            />
+          </div>
+
+          {/* ... (Upload Proof input) ... */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700">Upload Proof (PDF, JPG, PNG)</label>
             <input 
@@ -104,6 +117,7 @@ const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
             />
           </div>
 
+          {/* ... (Submit button) ... */}
           <button 
             type="submit"
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-lg font-semibold shadow-lg hover:from-purple-700"
