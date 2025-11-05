@@ -91,13 +91,13 @@ const AdminDashboard = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{act.category}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <a 
-                      href={`http://localhost:5000/uploads/${act.proof_url}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-purple-600 hover:text-purple-800 font-medium"
-                    >
-                      View Proof
-                    </a>
+                    href={act.proof_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:text-purple-800 font-medium"
+                  >
+                    View Proof
+                   </a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button 

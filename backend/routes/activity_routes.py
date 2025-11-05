@@ -1,14 +1,14 @@
-from flask import Blueprint, request, jsonify, current_app
+import cloudinary
+import cloudinary.uploader
+from flask import Blueprint, request, jsonify
 from extensions import db
 from models import Activity, Student
-from werkzeug.utils import secure_filename
 from flask_cors import cross_origin
-import os
 from sqlalchemy import func
 
 activity_bp = Blueprint('activity', __name__)
 
-# --- GET Activities (Updated) ---
+# --- GET Activities (Unchanged) ---
 @activity_bp.route('/activities', methods=['GET'])
 @cross_origin()
 def get_activities():
@@ -25,8 +25,7 @@ def get_activities():
             "id": activity.id,
             "name": activity.name,
             "category": activity.category,
-            # ✅ --- ADDED FIELD ---
-            "club_name": activity.club_name, 
+            "club_name": activity.club_name,
             "status": activity.status,
             "points": activity.points,
             "date": activity.date.strftime('%Y-%m-%d')
@@ -35,7 +34,7 @@ def get_activities():
     return jsonify({"success": True, "activities": output})
 
 
-# --- ADD Activity (Updated) ---
+# --- ADD Activity (✅ --- UPDATED --- ✅) ---
 @activity_bp.route('/activities/add', methods=['POST'])
 @cross_origin()
 def add_activity():
@@ -43,40 +42,40 @@ def add_activity():
     student_id = request.form.get('student_id')
     name = request.form.get('name')
     category = request.form.get('category')
-    
-    # ✅ --- GET NEW FIELD ---
-    # Get club name. If it's an empty string or None, default to "N/A".
     club_name = request.form.get('club_name') or "N/A"
 
-    # ... (validation and file checks remain the same) ...
+    # --- 2. Validation ---
     if not all([student_id, name, category]):
         return jsonify({"success": False, "message": "Missing required fields."}), 400
     if 'proof' not in request.files:
         return jsonify({"success": False, "message": "Proof file is required."}), 400
-    file = request.files['proof']
-    if file.filename == '':
+    
+    file_to_upload = request.files['proof']
+    if file_to_upload.filename == '':
         return jsonify({"success": False, "message": "No selected file."}), 400
 
-    # ... (file saving logic remains the same) ...
-    filename = ""
-    if file:
-        filename = secure_filename(f"{student_id}_{category}_{file.filename}")
-        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        try:
-            file.save(save_path)
-        except Exception as e:
-            return jsonify({"success": False, "message": f"Error saving file: {str(e)}"}), 500
+    # --- 3. Upload File to Cloudinary (✅ --- CHANGED --- ✅) ---
+    try:
+        # Upload the file object directly to Cloudinary
+        upload_result = cloudinary.uploader.upload(file_to_upload)
+    except Exception as e:
+        # Handle potential upload errors
+        return jsonify({"success": False, "message": f"Error uploading file: {str(e)}"}), 500
 
-    # --- 4. Create DB Entry (Updated) ---
+    # Get the secure URL from the upload result
+    file_url = upload_result.get('secure_url')
+    if not file_url:
+        return jsonify({"success": False, "message": "Error getting file URL from Cloudinary."}), 500
+
+    # --- 4. Create DB Entry (✅ --- CHANGED --- ✅) ---
     new_activity = Activity(
         name=name,
         category=category,
         student_id=student_id,
-        proof_url=filename,
+        proof_url=file_url,  # <-- Save the new Cloudinary URL
         status="Pending",
         points=0,
-        # ✅ --- SAVE NEW FIELD ---
-        club_name=club_name 
+        club_name=club_name
     )
 
     try:
@@ -91,7 +90,6 @@ def add_activity():
                 "id": new_activity.id,
                 "name": new_activity.name,
                 "category": new_activity.category,
-                # ✅ --- RETURN NEW FIELD ---
                 "club_name": new_activity.club_name,
                 "status": new_activity.status,
                 "points": new_activity.points,
@@ -100,13 +98,12 @@ def add_activity():
         }), 201
 
     except Exception as e:
-        # ... (error handling remains the same) ...
-        if os.path.exists(save_path):
-            os.remove(save_path)
+        # (✅ --- CHANGED --- ✅)
+        # No local file to delete, just roll back the DB
+        db.session.rollback()
         return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
 
-# ... (your /dashboard-stats route remains here, unchanged) ...
-    
+# --- Dashboard Stats (Unchanged, but fixed syntax) ---
 @activity_bp.route('/dashboard-stats', methods=['GET'])
 @cross_origin()
 def get_dashboard_stats():
@@ -119,30 +116,25 @@ def get_dashboard_stats():
         return jsonify({"success": False, "message": "Student not found."}), 404
 
     # --- 1. Calculate Points (Ps, Pt) ---
-    # Ps (Total Social Points)
     Ps = db.session.query(func.sum(Activity.points)).filter_by(
         student_id=student_id, 
         status='Completed', 
         category='social'
     ).scalar() or 0
     
-    # Pt (Total Points)
     Pt = db.session.query(func.sum(Activity.points)).filter_by(
         student_id=student_id, 
         status='Completed'
     ).scalar() or 0
 
     # --- 2. Calculate Activity Counts (Ns, Nt, Vs) ---
-    # Ns (Number of social activities, all statuses)
     Ns = Activity.query.filter_by(
         student_id=student_id, 
         category='social'
     ).count()
 
-    # Nt (Total activities, all statuses)
     Nt = Activity.query.filter_by(student_id=student_id).count()
 
-    # Vs (Number of VERIFIED social activities)
     Vs = Activity.query.filter_by(
         student_id=student_id, 
         category='social', 
@@ -150,7 +142,6 @@ def get_dashboard_stats():
     ).count()
 
     # --- 3. Calculate Diversity (D) ---
-    # Get all unique, *completed* categories for this student
     unique_categories_query = db.session.query(
         Activity.category
     ).filter_by(
@@ -159,49 +150,10 @@ def get_dashboard_stats():
     ).distinct().all()
     
     unique_categories_count = len(unique_categories_query)
-    
-    # Total possible categories in your system
     total_possible_categories = 5.0  # (Social, Technical, Sports, Cultural, NCC)
-    
-    # D (Diversity Factor)
     D = (unique_categories_count / total_possible_categories) if total_possible_categories > 0 else 0
 
-    # --- 4. Return all variables ---
-    return jsonify({
-        "success": True,
-        "stats": {
-            "Ps": Ps, # Social Points
-            "Pt": Pt, # Total Points
-            "Ns": Ns, # Total Social Activities
-            "Nt": Nt, # Total Activities
-            "Vs": Vs, # Verified Social Activities
-            "D": D,   # Diversity Factor
-            
-            # (Keep old ones for ProfileDropdown)
-            "total_points": Pt,
-            "social_points": Ps, # for the nav bar
-            "total_activities": Nt,
-            "social_activities": Ns,
-            "ranking": 0 # We'll deal with ranking later
-        }
-    })
-    
-    social_points = db.session.query(func.sum(Activity.points)).filter_by(
-        student_id=student_id, 
-        status='Completed', 
-        category='social'
-    ).scalar() or 0
-
-    # 2. Calculate Activity Counts
-    total_activities = Activity.query.filter_by(student_id=student_id).count()
-    social_activities = Activity.query.filter_by(
-        student_id=student_id, 
-        category='social'
-    ).count()
-
-    # 3. Calculate Ranking
-    # This query gets a list of (student_id, total_points) for all students,
-    # ordered from highest to lowest points.
+    # --- 4. Calculate Ranking ---
     all_student_points = db.session.query(
         Student.id,
         func.sum(Activity.points).label('total_points')
@@ -214,24 +166,33 @@ def get_dashboard_stats():
     ).all()
 
     ranking = 0
+    total_points_for_ranking = 0 # Need this to check for 0-point students
+    
     for i, (id, points) in enumerate(all_student_points):
-        # We cast student_id to int because it comes from a URL param
+        total_points_for_ranking = points if id == int(student_id) else total_points_for_ranking
         if id == int(student_id):
             ranking = i + 1 # Rank is 1-based index
             break
             
-    # If student has 0 points, they might not be in the list, so they are unranked
-    if ranking == 0 and total_points == 0:
+    if ranking == 0 and total_points_for_ranking == 0:
         total_students = Student.query.count()
-        ranking = total_students # Or set to "N/A"
+        ranking = total_students # Or set to "N/A" or total_students
 
+    # --- 5. Return all variables ---
     return jsonify({
         "success": True,
         "stats": {
-            "total_points": total_points,
-            "social_points": social_points,
-            "total_activities": total_activities,
-            "social_activities": social_activities,
+            "Ps": Ps,
+            "Pt": Pt,
+            "Ns": Ns,
+            "Nt": Nt,
+            "Vs": Vs,
+            "D": D,
+            "total_points": Pt, # Duplicated for frontend ProfileDropdown
+            "social_points": Ps, # Duplicated for frontend nav bar
+            "total_activities": Nt,
+            "social_activities": Ns,
             "ranking": ranking
         }
     })
+    

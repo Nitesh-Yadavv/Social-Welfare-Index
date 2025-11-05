@@ -1,4 +1,6 @@
 # backend/routes/auth_routes.py
+import cloudinary
+import cloudinary.uploader
 from flask import Blueprint, request, jsonify, current_app
 from extensions import db
 from models import Student
@@ -51,23 +53,25 @@ def signup():
         return jsonify({"success": False, "message": "Email or Roll No. already exists."}), 400
 
     # 4. --- File Handling ---
+    # --- ADD THIS NEW CODE ---
     if 'student_id_pic' not in request.files:
         return jsonify({"success": False, "message": "Student ID picture is required."}), 400
-    
-    file = request.files['student_id_pic']
-    if file.filename == '':
-        return jsonify({"success": False, "message": "No selected file."}), 400
 
-    filename = ""
-    if file:
-        # Secure the filename and add roll_no to make it unique
-        filename = secure_filename(f"{roll_no}_{file.filename}")
-        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        
-        try:
-            file.save(save_path)
-        except Exception as e:
-            return jsonify({"success": False, "message": f"Error saving file: {str(e)}"}), 500
+    file_to_upload = request.files['student_id_pic']
+
+    # Upload the file to Cloudinary
+    try:
+        upload_result = cloudinary.uploader.upload(file_to_upload)
+    except Exception as e:
+        # Handle potential upload errors
+        return jsonify({"success": False, "message": f"Error uploading file: {str(e)}"}), 500
+
+    # Get the secure URL from the upload result
+    file_url = upload_result.get('secure_url')
+
+    if not file_url:
+        return jsonify({"success": False, "message": "Error getting file URL from Cloudinary."}), 500
+# --- END OF NEW CODE ---
 
     # 5. --- Create New Student ---
     hashed_password = generate_password_hash(password)
@@ -78,7 +82,7 @@ def signup():
         password=hashed_password,
         roll_no=roll_no,
         mobile_no=mobile_no,
-        student_id_pic_url=filename  # Store just the filename
+        student_id_pic_url=file_url  # Store just the filename
     )
     
     try:
