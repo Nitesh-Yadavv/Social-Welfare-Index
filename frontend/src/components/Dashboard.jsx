@@ -1,88 +1,171 @@
-// src/components/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
+// frontend/src/components/Dashboard.jsx
+import React, { useState, useEffect, useCallback } from 'react';
+import AddActivityModal from './AddActivityModal';
+import TopNavBar from './TopNavBar'; // ✅ NEW: Import TopNavBar
+
+// ❌ OLD: We no longer import StudentOverviewCard
 
 const Dashboard = ({ onLogout }) => {
+  const [student, setStudent] = useState(null);
   const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const user = JSON.parse(localStorage.getItem('user'));
+  const [stats, setStats] = useState(null); // ✅ NEW: State for dashboard stats
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        // This endpoint currently fetches ALL activities, not just the user's
-        // For production, you'd want an endpoint like /api/students/{user.id}/activities
-        const response = await fetch('http://localhost:5000/api/activities');
-        const data = await response.json();
-        setActivities(data);
-      } catch (error) {
-        console.error("Error fetching activities:", error);
-      } finally {
-        setLoading(false);
+  // --- Fetch Activities (Unchanged) ---
+  const fetchActivities = useCallback(async (studentId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/activities?student_id=${studentId}`);
+      const data = await response.json();
+      if (data.success) {
+        setActivities(data.activities);
       }
-    };
-
-    fetchActivities();
+    } catch (err) {
+      console.error("Error fetching activities:", err);
+    }
   }, []);
 
+  // ✅ --- NEW: Fetch Dashboard Stats ---
+  const fetchStats = useCallback(async (studentId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/dashboard-stats?student_id=${studentId}`);
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    }
+  }, []);
+
+  // --- useEffect (Updated) ---
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setStudent(userData);
+      
+      // Fetch both sets of data
+      fetchActivities(userData.id);
+      fetchStats(userData.id);
+    } else {
+      onLogout();
+    }
+  }, [fetchActivities, fetchStats, onLogout]); // Add fetchStats to dependency array
+
+  // --- Logout Handler (Unchanged) ---
   const handleLogout = () => {
     localStorage.removeItem('user');
     onLogout();
   };
 
-  if (loading) return <div className="p-8 text-center text-purple-600">Loading activities...</div>;
+  // --- Activity Added Handler (Unchanged) ---
+  const handleActivityAdded = (newActivity) => {
+    setActivities([newActivity, ...activities]);
+    // Re-fetch stats to get new totals
+    fetchStats(student.id);
+  };
+
+  // ✅ --- Updated Loading State ---
+  // Wait for all data to be loaded
+  if (!student || !activities || !stats) {
+    return <div className="min-h-screen flex items-center justify-center">Loading Dashboard...</div>;
+  }
 
   return (
-    // Updated container with a subtle purple gradient background
-    <div className="min-h-screen p-8 bg-gradient-to-br from-purple-50 to-indigo-100">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10">
+    <div className="min-h-screen bg-gray-100">
+      
+      {/* ❌ OLD SIDEBAR IS REMOVED */}
+
+      {/* ✅ NEW: Render the Top Nav Bar */}
+      <TopNavBar student={student} stats={stats} onLogout={handleLogout} />
+
+      {/* ✅ NEW: Main Content Area (Layout updated) */}
+      {/* We add 'pt-20' to push content below the fixed nav bar */}
+      <main className="pt-20 p-8">
         
-        {/* Header */}
-        <header className="flex justify-between items-center mb-8 pb-4 border-b-2 border-purple-200">
-          <h1 className="text-3xl font-extrabold text-purple-800">Welcome, {user?.name || 'Student'}! 🎉</h1>
-          {/* Logout Button: Dark purple background */}
-          <button
-            onClick={handleLogout}
-            className="bg-purple-600 text-white px-5 py-2 rounded-full font-semibold shadow-lg transition duration-300 ease-in-out hover:bg-purple-700 hover:shadow-xl"
-          >
-            Logout
-          </button>
-        </header>
+        {/* ❌ OLD StudentOverviewCard IS REMOVED */}
 
-        {/* Activities Section */}
-        <h2 className="text-2xl font-bold mb-6 text-purple-700">Your Engagement Index</h2>
-
-        <div className="shadow-lg rounded-xl overflow-hidden">
-          <ul className="divide-y divide-purple-100">
-            {activities.map((activity) => (
-              <li 
-                key={activity.id} 
-                className="p-4 md:p-6 flex justify-between items-center bg-white transition duration-200 ease-in-out hover:bg-purple-50"
+        {/* --- Main Body Layout (Unchanged) --- */}
+        <div className="flex space-x-8">
+        
+          {/* Left Side: Activity List */}
+          <div className="flex-grow w-2/3">
+            {/* --- Sub-header --- */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-700">Activity Summary</h2>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-purple-700 transition"
               >
-                <div>
-                  {/* Activity Name */}
-                  <p className="text-xl font-medium text-gray-900">{activity.name}</p>
-                  {/* Points */}
-                  <p className="text-sm text-purple-500 font-medium">
-                    Points: <span className="font-semibold text-purple-700">{activity.points}</span>
-                  </p>
-                </div>
-                {/* Status Badge: Conditional styling for Active/Completed */}
-                <span className={`
-                  px-4 py-1 text-sm font-bold rounded-full 
-                  ${
-                    activity.status === 'Active' 
-                      ? 'bg-indigo-200 text-indigo-800 border-2 border-indigo-400' 
-                      : 'bg-green-100 text-green-700 border-2 border-green-300'
-                  }
-                `}>
-                  {activity.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                &#x271A; Add New Activity
+              </button>
+            </div>
 
-      </div>
+            {/* --- Activity Table (Unchanged) --- */}
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                {/* ... (your existing table head) ... */}
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                  </tr>
+                </thead>
+                {/* ... (your existing table body) ... */}
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {activities.length > 0 ? (
+                    activities.map((activity) => (
+                      <tr key={activity.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.category}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.date}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            activity.status === 'Completed' ? 'bg-green-100 text-green-800' : 
+                            activity.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {activity.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.points}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="text-center p-6 text-gray-500">
+                        You haven't added any activities yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          {/* Right Side: Upcoming Events (Unchanged) */}
+          <div className="w-1/3">
+            {/* ... (your existing upcoming events placeholder) ... */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-700">Upcoming Events</h2>
+            </div>
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <p className="text-gray-500">No upcoming events found.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* --- Render Modal (Unchanged) --- */}
+      {isModalOpen && (
+        <AddActivityModal 
+          studentId={student.id}
+          onClose={() => setIsModalOpen(false)}
+          onActivityAdded={handleActivityAdded}
+        />
+      )}
     </div>
   );
 };
