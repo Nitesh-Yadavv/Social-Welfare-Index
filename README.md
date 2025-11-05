@@ -1,36 +1,36 @@
-# 🎓 Social Welfare Index (SWI) — Student Activity Tracker
+# Social Welfare Index (SWI) — Student Activity Tracker
 
 The **Social Welfare Index (SWI)** is a full-stack web application that helps universities and students track extracurricular and social welfare activities.  
 Each student has a personalized dashboard showing their activities, points, and a computed Social Welfare Index (SWI) out of 100.
 
 ---
 
-## 🚀 Features
+## Features
 
-✅ **Secure Authentication**
+ **Secure Authentication**
 - Student signup and login system.
 - Only students with emails ending in `@rtu.ac.in` can register.
 - Passwords securely hashed using `werkzeug.security`.
 
-✅ **Student Dashboard**
+ **Student Dashboard**
 - Displays all student activities in a beautiful responsive UI.
 - Shows profile card with name, roll number, mobile, and total stats.
 - Calculates Social Welfare Index (SWI) based on participation & points.
 
-✅ **Add New Activity**
+ **Add New Activity**
 - Students can add new activities (Social, Technical, Sports, Cultural, NCC).
 - Upload certificate proofs (image or PDF).
 - Activities are auto-marked as “Pending”.
 
-✅ **Upcoming Events**
+ **Upcoming Events**
 - Sidebar showing upcoming college or club events.
 
-✅ **Modern UI**
+ **Modern UI**
 - React + Tailwind CSS frontend for a clean, dynamic interface.
 
 ---
 
-## 🧠 SWI (Social Welfare Index) Formula
+##  SWI (Social Welfare Index) Formula
 
 The Social Welfare Index (SWI) measures a student’s engagement and contribution in social activities.
 
@@ -48,7 +48,7 @@ Where:
 
 ---
 
-## 🧩 Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |-------|-------------|
@@ -61,18 +61,18 @@ Where:
 | **File Uploads** | Flask File Upload handling |
 
 ---
-## ⚙️ Installation & Setup
+##  Installation & Setup
 
-### 🧰 Prerequisites
+###  Prerequisites
 Make sure you have installed:
 - Python 3.10+
-- Node.js 18+
+- React.js
 - npm or yarn
 - Git
 
 ---
 
-### 🐍 Backend Setup (Flask)
+###  Backend Setup (Flask)
 
 ```bash
 cd backend
@@ -83,4 +83,10 @@ source venv/bin/activate  # (on macOS/Linux)
 pip install -r requirements.txt
 python seed.py   # (optional) add sample student
 python app.py
+```
+### Frontend Setup (React)
+```bash
+cd frontend
+npm install
+npm start
 ```
