@@ -14,7 +14,10 @@ UPLOAD_FOLDER = 'uploads'
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-    CORS(app)
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+    CORS(app, origins=[frontend_url], supports_credentials=True)
+    # --- END NEW CORS SETUP ---
     
     # ... (all your config remains the same) ...
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL')
