@@ -9,7 +9,7 @@ const AdminDashboard = () => {
 
   const fetchPending = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/pending-activities');
+      const response = await fetch('${import.meta.env.VITE_API_URL}/api/admin/pending-activities');
       const data = await response.json();
       if (data.success) {
         setPending(data.activities);

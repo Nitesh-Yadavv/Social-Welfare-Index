@@ -28,7 +28,7 @@ const SignupForm = () => {
     formData.append('student_id_pic', studentIdPic);
 
     try {
-      const response = await fetch('http://localhost:5000/api/signup', {
+      const response = await fetch('${import.meta.env.VITE_API_URL}/api/signup', {
         method: 'POST',
         // IMPORTANT: Do NOT set Content-Type header
         // The browser will set it automatically for FormData

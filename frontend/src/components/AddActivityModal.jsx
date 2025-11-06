@@ -29,7 +29,7 @@ const AddActivityModal = ({ studentId, onClose, onActivityAdded }) => {
 
     try {
       // ... (fetch logic remains the same) ...
-      const response = await fetch('http://localhost:5000/api/activities/add', {
+      const response = await fetch('${import.meta.env.VITE_API_URL}/api/activities/add', {
         method: 'POST',
         body: formData,
       });
